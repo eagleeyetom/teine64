@@ -6,17 +6,23 @@
     <Nullable>enable</Nullable>
     <AssemblyName>Teine64</AssemblyName>
     <RootNamespace>Teine64</RootNamespace>
-  <PublishAot>true</PublishAot>
-  <SelfContained>true</SelfContained>
-  <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-  <PublishSingleFile>false</PublishSingleFile>
+    <PublishAot>true</PublishAot>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishSingleFile>false</PublishSingleFile>
     <StripSymbols>true</StripSymbols>
     <InvariantGlobalization>true</InvariantGlobalization>
     <Optimize>true</Optimize>
     <DebuggerSupport>false</DebuggerSupport>
     <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
-  <IlcOptimizationPreference>Size</IlcOptimizationPreference>
-  <StripSymbols>true</StripSymbols>
+    <IlcOptimizationPreference>Size</IlcOptimizationPreference>
+    <!-- Additional size-focused NativeAOT tweaks -->
+    <IlcDisableExceptionMessages>true</IlcDisableExceptionMessages>
+    <IlcGenerateStackTraceData>false</IlcGenerateStackTraceData>
+    <IlcDisableReflection>false</IlcDisableReflection> <!-- keep reflection metadata minimal; set true only if absolutely sure no reflection usage -->
+    <EventSourceSupport>false</EventSourceSupport>
+    <!-- Avoid generating full generic sharing data beyond what is used -->
+    <IlcTrimMetadata>true</IlcTrimMetadata>
     <EnableDefaultItems>false</EnableDefaultItems>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationIcon>Resources\teine64.ico</ApplicationIcon>
