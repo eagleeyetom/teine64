@@ -6,17 +6,17 @@
     <Nullable>enable</Nullable>
     <AssemblyName>Teine64</AssemblyName>
     <RootNamespace>Teine64</RootNamespace>
-  <PublishAot>false</PublishAot>
-  <!-- Allow enabling NativeAOT by passing /p:PublishNativeAot=true -->
-  <PublishAot Condition="'$(PublishNativeAot)'=='true'">true</PublishAot>
-  <SelfContained>false</SelfContained>
-  <PublishSingleFile>true</PublishSingleFile>
+  <PublishAot>true</PublishAot>
+  <SelfContained>true</SelfContained>
+  <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  <PublishSingleFile>false</PublishSingleFile>
     <StripSymbols>true</StripSymbols>
     <InvariantGlobalization>true</InvariantGlobalization>
     <Optimize>true</Optimize>
     <DebuggerSupport>false</DebuggerSupport>
     <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
-  <PublishTrimmed>false</PublishTrimmed>
+  <IlcOptimizationPreference>Size</IlcOptimizationPreference>
+  <StripSymbols>true</StripSymbols>
     <EnableDefaultItems>false</EnableDefaultItems>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationIcon>Resources\teine64.ico</ApplicationIcon>
