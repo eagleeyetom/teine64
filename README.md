@@ -1,26 +1,23 @@
 # Teine64
 
-Ultra-lightweight Windows tray utility ("caffeine" style) built on .NET 8 + direct Win32 API (no WinForms / WPF) to keep the system awake via `SetThreadExecutionState`.
+[![Build](https://github.com/eagleeyetom/teine64/actions/workflows/build.yml/badge.svg)](https://github.com/eagleeyetom/teine64/actions/workflows/build.yml)
+[![Release](https://img.shields.io/github/v/release/eagleeyetom/teine64?sort=semver)](https://github.com/eagleeyetom/teine64/releases)
+[![Downloads](https://img.shields.io/github/downloads/eagleeyetom/teine64/total)](https://github.com/eagleeyetom/teine64/releases)
+[![License](https://img.shields.io/github/license/eagleeyetom/teine64)](LICENSE)
 
-Current default distribution: **NativeAOT self-contained exe** (no installed .NET runtime required). A secondary artifact provides the **tiny framework-dependent single-file (~160 KB)** build for those who already have the .NET 8 runtime and want minimal disk footprint.
+Ultra‑light, zero‑window Windows tray utility ("caffeine" style) built on .NET 8 + raw Win32 to keep your system & display awake. Single source file core, instant startup, no dependencies (NativeAOT default).
+
+Default artifact: NativeAOT self‑contained executable. Alternate artifact: tiny framework‑dependent single-file (~160 KB) if you already have the .NET 8 desktop runtime.
 
 ---
 ## Features
-* Starts directly in the system tray (hidden window)
-* Double‑click tray icon: toggle Running / Paused
-* Right‑click menu:
-	* Pause / Resume
-	* Pause 5 / 15 / 30 / 60 Minutes (auto-resume, countdown in tooltip)
-	* Start with Windows (toggle, persisted)
-	* About… dialog
-	* Exit
-* Timed pauses (5/15/30/60) auto‑resume with balloon notification
-* Tooltip always shows: `Teine64 - Running` or `Teine64 - Paused XmYYs`
-* Dynamic tiny tea‑mug icons (filled vs empty) generated at runtime (no assets on disk)
-* Optional start paused: `--paused`
-* Persists last active state + autostart flag in `%APPDATA%/Teine64/config.ini`
-* Refreshes execution state every 25 seconds for reliability
-* Single source file (`Program.cs`)
+* Tray-only (no taskbar window) — double‑click toggles Running / Paused
+* Timed pauses: 5 / 15 / 30 / 60 minutes (auto‑resume + balloon notice)
+* Tooltip always shows live state & remaining pause countdown
+* Runtime‑generated tea mug icons (no static assets)
+* Persisted state + autostart toggle (registry) + optional `--paused` start flag
+* Single source file core (`Program.cs`), minimal Win32 P/Invoke surface
+* NativeAOT default build (fast cold start, no installed runtime required)
 
 ---
 ## How it Works
@@ -39,8 +36,15 @@ SetThreadExecutionState(ES_CONTINUOUS)
 Icons are 16×16 ARGB bitmaps created with a DIB section and converted via `CreateIconIndirect`.
 
 ---
+## Download
+Grab the latest release from: https://github.com/eagleeyetom/teine64/releases
+
+Artifacts:
+* Teine64.exe (NativeAOT) — standalone
+* Teine64.exe (fdd-singlefile) — framework-dependent ultra-small
+
 ## Build
-Requires the .NET 8 SDK. (NativeAOT also needs the Visual C++ build tools on Windows — already assumed present.)
+Requires the .NET 8 SDK. (NativeAOT also needs the Visual C++ build tools on Windows.)
 
 ```powershell
 dotnet build .\src\Teine64\Teine64.csproj -c Release
@@ -51,7 +55,6 @@ dotnet build .\src\Teine64\Teine64.csproj -c Release
 dotnet run --project .\src\Teine64\Teine64.csproj -- --paused
 ```
 
-publish\Teine64.exe
 ## Publish (NativeAOT default)
 Produces a single self-contained native executable (no runtime dependency):
 
@@ -71,10 +74,10 @@ dotnet publish .\src\Teine64\Teine64.csproj -c Release -r win-x64 --self-contain
 dotnet publish .\src\Teine64\Teine64.csproj -c Release -r win-x64 --self-contained true -p:PublishAot=false -p:PublishSingleFile=true -p:PublishTrimmed=true
 ```
 
-### About Sizes (approximate)
-* Framework-dependent single-file: ~160 KB (needs .NET 8 runtime installed)
-* NativeAOT: larger (MBs) but zero dependencies & fastest startup
-* Self-contained managed single-file: between the two extremes
+### Approximate Sizes
+* Framework-dependent single-file: ~160 KB (needs .NET 8 runtime)
+* NativeAOT: larger (MBs) — zero dependencies & fastest startup
+* Self-contained managed single-file: between the two
 
 ---
 ## Usage
@@ -99,14 +102,6 @@ You can safely remove them:
 Remove-Item -Recurse -Force .\src\Teine64\bin, .\src\Teine64\obj
 ```
 The distributable is only the file in `publish/`.
-
----
-## Future Enhancements (Ideas)
-* Custom user-defined pause durations
-* Multi-monitor awareness / optional display-off prevention only
-* Additional NativeAOT size reduction (profile-guided / analyzer trimming hints)
-* Windows toast notifications (modern) instead of legacy balloon
-* Optional configurable resume notification style
 
 ---
 ## Versioning
