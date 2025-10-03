@@ -24,20 +24,30 @@ jobs:
 
       - name: Build (Release)
         run: dotnet build Teine64.sln -c Release --no-restore
+      - name: Publish NativeAOT (default)
+        run: dotnet publish src/Teine64/Teine64.csproj -c Release -r win-x64 -o publish/aot-win-x64
 
-      - name: Publish single-file win-x64
-        run: dotnet publish src/Teine64/Teine64.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=false -o publish/win-x64
+      - name: Publish framework-dependent single-file (tiny)
+        run: dotnet publish src/Teine64/Teine64.csproj -c Release -r win-x64 --self-contained false -p:PublishAot=false -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=false -p:StripSymbols=true -o publish/fdd-singlefile-win-x64
 
-      - name: Archive artifact
+      - name: Upload NativeAOT artifact
         uses: actions/upload-artifact@v4
         with:
-          name: teine64-win-x64
-          path: publish/win-x64/Teine64.exe
+          name: teine64-aot-win-x64
+          path: publish/aot-win-x64/Teine64.exe
+
+      - name: Upload tiny single-file artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: teine64-fdd-singlefile-win-x64
+          path: publish/fdd-singlefile-win-x64/Teine64.exe
 
       - name: Create GitHub Release (tag push only)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: publish/win-x64/Teine64.exe
+          files: |
+            publish/aot-win-x64/Teine64.exe
+            publish/fdd-singlefile-win-x64/Teine64.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,8 +1,8 @@
 # Teine64
 
-Ultra-lightweight Windows tray utility ("caffeine" style) built on .NET 8 with direct Win32 API (no WinForms / WPF) to keep the system awake via `SetThreadExecutionState`.
+Ultra-lightweight Windows tray utility ("caffeine" style) built on .NET 8 + direct Win32 API (no WinForms / WPF) to keep the system awake via `SetThreadExecutionState`.
 
-Current distribution target: **framework-dependent single-file (~160 KB)**. (NativeAOT can be revisited later once a C++ build toolchain is installed.)
+Current default distribution: **NativeAOT self-contained exe** (no installed .NET runtime required). A secondary artifact provides the **tiny framework-dependent single-file (~160 KB)** build for those who already have the .NET 8 runtime and want minimal disk footprint.
 
 ---
 ## Features
@@ -40,7 +40,7 @@ Icons are 16×16 ARGB bitmaps created with a DIB section and converted via `Crea
 
 ---
 ## Build
-Requires only the .NET 8 SDK.
+Requires the .NET 8 SDK. (NativeAOT also needs the Visual C++ build tools on Windows — already assumed present.)
 
 ```powershell
 dotnet build .\src\Teine64\Teine64.csproj -c Release
@@ -51,34 +51,30 @@ dotnet build .\src\Teine64\Teine64.csproj -c Release
 dotnet run --project .\src\Teine64\Teine64.csproj -- --paused
 ```
 
-## Publish (framework-dependent single file)
-This produces the minimal ~160 KB executable (expects .NET 8 runtime installed):
-
-```powershell
-dotnet publish .\src\Teine64\Teine64.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=false
-```
-
-The build script copies the result to the root `publish` directory:
-
-```
 publish\Teine64.exe
+## Publish (NativeAOT default)
+Produces a single self-contained native executable (no runtime dependency):
+
+```powershell
+dotnet publish .\src\Teine64\Teine64.csproj -c Release -r win-x64
 ```
 
-### (Optional) Self-contained
-Larger (several MB) but no installed runtime needed:
+Result: `src/Teine64/bin/Release/net8.0/win-x64/publish/Teine64.exe`
+
+### Alternate: framework-dependent ultra-small single file (~160 KB)
 ```powershell
-dotnet publish .\src\Teine64\Teine64.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true
+dotnet publish .\src\Teine64\Teine64.csproj -c Release -r win-x64 --self-contained false -p:PublishAot=false -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=false -p:StripSymbols=true
 ```
 
-### (Deferred) NativeAOT
-Enable once the C++ toolchain is installed by setting in the project:
-```xml
-<PublishAot>true</PublishAot>
-```
-Then:
+### Alternate: self-contained managed single file (non-AOT)
 ```powershell
-dotnet publish .\src\Teine64\Teine64.csproj -c Release -r win-x64 -p:PublishAot=true
+dotnet publish .\src\Teine64\Teine64.csproj -c Release -r win-x64 --self-contained true -p:PublishAot=false -p:PublishSingleFile=true -p:PublishTrimmed=true
 ```
+
+### About Sizes (approximate)
+* Framework-dependent single-file: ~160 KB (needs .NET 8 runtime installed)
+* NativeAOT: larger (MBs) but zero dependencies & fastest startup
+* Self-contained managed single-file: between the two extremes
 
 ---
 ## Usage
@@ -108,8 +104,14 @@ The distributable is only the file in `publish/`.
 ## Future Enhancements (Ideas)
 * Custom user-defined pause durations
 * Multi-monitor awareness / optional display-off prevention only
-* NativeAOT size reduction pass
+* Additional NativeAOT size reduction (profile-guided / analyzer trimming hints)
 * Windows toast notifications (modern) instead of legacy balloon
+* Optional configurable resume notification style
+
+---
+## Versioning
+Semantic versioning (MAJOR.MINOR.PATCH). Current: see `CHANGELOG.md`.
+Builds on CI embed file/product version info; InformationalVersion may append commit SHA for traceability.
 
 ---
 ## License
