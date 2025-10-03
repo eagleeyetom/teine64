@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Teine64</AssemblyName>
+    <RootNamespace>Teine64</RootNamespace>
+  <PublishAot>false</PublishAot>
+  <!-- Allow enabling NativeAOT by passing /p:PublishNativeAot=true -->
+  <PublishAot Condition="'$(PublishNativeAot)'=='true'">true</PublishAot>
+  <SelfContained>false</SelfContained>
+  <PublishSingleFile>true</PublishSingleFile>
+    <StripSymbols>true</StripSymbols>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <Optimize>true</Optimize>
+    <DebuggerSupport>false</DebuggerSupport>
+    <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
+  <PublishTrimmed>false</PublishTrimmed>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ApplicationIcon>Resources\teine64.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <None Include="Resources\teine64.ico" Condition="Exists('Resources\\teine64.ico')" />
+  </ItemGroup>
+
+  <!-- Simple generation of icon via base64 if missing (no CodeTaskFactory needed) -->
+  <Target Name="EnsureTeineIcon" BeforeTargets="PrepareForBuild">
+    <MakeDir Directories="Resources" Condition="!Exists('Resources')" />
+    <Exec Command="dotnet run --project ..\IconGen\IconGen.csproj -- Resources\teine64.ico" />
+  </Target>
+</Project>

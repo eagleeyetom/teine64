@@ -1,0 +1,45 @@
+# ---- Teine64 / .NET ignore ----
+# Build outputs
+**/bin/
+**/obj/
+
+# Publish artifacts
+publish/
+
+# Generated icon (produced at build by IconGen target)
+src/Teine64/Resources/teine64.ico
+src/Teine64/Resources/teine64.ico.b64
+
+# VS / IDE settings
+.vs/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+
+# Logs / temp
+*.log
+*.pid
+*.tmp
+~*
+
+# Packages
+*.nupkg
+*.snupkg
+
+# OS cruft
+[Dd]esktop.ini
+Thumbs.db
+.DS_Store
+
+# Tools
+*.ps1xml
+
+# Rider / JetBrains
+.idea/
+*.ipr
+*.iws
+*.iml
+
+# Others
+*.swp
