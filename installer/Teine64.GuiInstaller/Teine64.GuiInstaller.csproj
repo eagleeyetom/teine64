@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+  <UseWindowsForms>true</UseWindowsForms>
+  <EnableDefaultItems>true</EnableDefaultItems>
+  <UseWPF>false</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Teine64Installer</AssemblyName>
+    <RootNamespace>Teine64Installer</RootNamespace>
+    <ApplicationIcon>../..//src/Teine64/Resources/teine64.ico</ApplicationIcon>
+    <PlatformTarget>x64</PlatformTarget>
+    <!-- Single-file self-contained so the installer is exactly one EXE -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeAllContentForSelfExtract>false</IncludeAllContentForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <StripSymbols>true</StripSymbols>
+    <DebugType>none</DebugType>
+  <PublishTrimmed>false</PublishTrimmed> <!-- Avoid trimming WinForms -->
+  <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Payload/Teine64.exe" LogicalName="Teine64Payload" />
+  </ItemGroup>
+
+  <!-- Generate NativeAOT self-contained payload before building and embed it -->
+  <Target Name="GenerateAotPayload" BeforeTargets="BeforeCompile">
+    <MakeDir Directories="Payload" />
+    <Exec Command="dotnet publish ../../src/Teine64/Teine64.csproj -c Release -r win-x64 -p:PublishAot=true -p:SelfContained=true -p:PublishSingleFile=false -o Payload" />
+    <!-- Copy produced exe into Payload root as Teine64.exe (publish directory may already be correct) -->
+  </Target>
+</Project>

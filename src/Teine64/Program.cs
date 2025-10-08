@@ -36,6 +36,9 @@ internal static partial class Program
     private static readonly nint HKEY_CURRENT_USER = unchecked((nint)0x80000001);
 
     private static bool _autostart;
+    private static bool _simulateKeypressMode = false;
+    private const int ID_SIMKEY = 1011;
+
 
     private static bool _active = true;
     private static nint _hWnd;
@@ -66,11 +69,17 @@ internal static partial class Program
         if (_hWnd == 0)
             return 1;
 
-    _iconActive = CreateTeaIcon(full:true);
-    _iconPaused = CreateTeaIcon(full:false);
-    AddTrayIcon();
+        _iconActive = CreateTeaIcon(full:true);
+        _iconPaused = CreateTeaIcon(full:false);
+        AddTrayIcon();
         ApplyExecutionState();
-        _timer = new System.Threading.Timer(_ => ApplyExecutionState(), null, 25_000, 25_000);
+        _timer = new System.Threading.Timer(_ =>
+        {
+            if (_simulateKeypressMode)
+                SimulateKeypress();
+            else
+                ApplyExecutionState();
+        }, null, 59_000, 59_000);
 
         MSG msg;
         while (GetMessage(out msg, 0, 0, 0) != 0)
@@ -81,11 +90,65 @@ internal static partial class Program
         return 0;
     }
 
+
     private static bool HasArg(string[] args, string flag)
     {
         foreach (var a in args) if (string.Equals(a, flag, StringComparison.OrdinalIgnoreCase)) return true;
         return false;
     }
+
+    // --- Simulate Shift+F15 mode ---
+    private static void ToggleSimKeyMode()
+    {
+        _simulateKeypressMode = !_simulateKeypressMode;
+        SaveConfig();
+        ModifyTrayIcon();
+    }
+
+    private static void SimulateKeypress()
+    {
+        if (!_active) return;
+        // Simulate Shift+F15 using SendInput
+        INPUT[] inputs = new INPUT[4];
+        // Shift down
+        inputs[0].type = 1; // Keyboard
+        inputs[0].U.ki.wVk = 0x10; // VK_SHIFT
+        // F15 down
+        inputs[1].type = 1;
+        inputs[1].U.ki.wVk = 0x7E; // VK_F15
+        // F15 up
+        inputs[2].type = 1;
+        inputs[2].U.ki.wVk = 0x7E;
+        inputs[2].U.ki.dwFlags = 2; // KEYEVENTF_KEYUP
+        // Shift up
+        inputs[3].type = 1;
+        inputs[3].U.ki.wVk = 0x10;
+        inputs[3].U.ki.dwFlags = 2;
+        SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<INPUT>());
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct INPUT
+    {
+        public uint type;
+        public InputUnion U;
+    }
+    [StructLayout(LayoutKind.Explicit)]
+    private struct InputUnion
+    {
+        [FieldOffset(0)] public KEYBDINPUT ki;
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    private struct KEYBDINPUT
+    {
+        public ushort wVk;
+        public ushort wScan;
+        public uint dwFlags;
+        public uint time;
+        public nint dwExtraInfo;
+    }
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
 
     private static void RegisterWindowClass()
     {
@@ -120,7 +183,7 @@ internal static partial class Program
     private static string BuildTooltip()
     {
         if (_active)
-            return "Teine64 - Running";
+            return _simulateKeypressMode ? "Teine64 - SimKey Mode" : "Teine64 - Running";
         if (_timedPause && _timedPauseEnd.HasValue)
         {
             var remaining = _timedPauseEnd.Value - DateTime.UtcNow;
@@ -131,7 +194,7 @@ internal static partial class Program
             }
             return $"Teine64 - Paused {Math.Max(0,(int)remaining.TotalMinutes)}m{Math.Max(0,remaining.Seconds):D2}s";
         }
-        return "Teine64 - Paused";
+    return _simulateKeypressMode ? "Teine64 - SimKey Paused" : "Teine64 - Paused";
     }
 
     private static void RemoveTrayIcon()
@@ -207,6 +270,9 @@ internal static partial class Program
                 case ID_AUTOSTART:
                     ToggleAutostart();
                     break;
+                case ID_SIMKEY:
+                    ToggleSimKeyMode();
+                    break;
                 case ID_ABOUT:
                     ShowAbout();
                     break;
@@ -232,7 +298,8 @@ internal static partial class Program
         AppendMenu(hMenu, 0, ID_PAUSE30, LabelForPause(30));
         AppendMenu(hMenu, 0, ID_PAUSE60, LabelForPause(60));
         AppendMenu(hMenu, _autostart ? 0x8u : 0u, ID_AUTOSTART, "Start with Windows"); // 0x8 = MF_CHECKED
-        AppendMenu(hMenu, 0, ID_ABOUT, "About...");
+    AppendMenu(hMenu, 0, ID_ABOUT, "About...");
+    AppendMenu(hMenu, _simulateKeypressMode ? 0x8u : 0u, ID_SIMKEY, "Simulate Shift+F15");
     AppendMenu(hMenu, 0x800, 0, string.Empty); // separator (MF_SEPARATOR)
         AppendMenu(hMenu, 0, ID_EXIT, "Exit");
         POINT p;
@@ -500,17 +567,20 @@ internal static partial class Program
     {
         string subKey = "Software\\Microsoft\\Windows\\CurrentVersion\\Run";
         nint hKey;
-        const int KEY_WRITE = 0x20006; // KEY_SET_VALUE | KEY_CREATE_SUB_KEY | KEY_WOW64_64KEY | KEY_QUERY_VALUE
-    int rc = RegCreateKeyEx(HKEY_CURRENT_USER, subKey, 0, null, 0, KEY_WRITE, 0, out hKey, out _);
+        const int KEY_WRITE = 0x20006; // composite rights
+        int rc = RegCreateKeyEx(HKEY_CURRENT_USER, subKey, 0, null, 0, KEY_WRITE, 0, out hKey, out _);
         if (rc != 0) return;
         try
         {
             if (enable)
             {
                 string exe = ProcessPath();
-                var bytesLen = (exe.Length + 1) * 2;
-                RegSetValueEx(hKey, "Teine64", 0, 1, exe, bytesLen); // 1=REG_SZ
-                _autostart = true;
+                if (!string.IsNullOrWhiteSpace(exe))
+                {
+                    int bytes = (exe.Length + 1) * 2;
+                    RegSetValueEx(hKey, "Teine64", 0, 1, exe, bytes); // REG_SZ
+                    _autostart = true;
+                }
             }
             else
             {
@@ -524,9 +594,9 @@ internal static partial class Program
     private static bool DetectAutostart()
     {
         string subKey = "Software\\Microsoft\\Windows\\CurrentVersion\\Run";
-        const int KEY_READ = 0x20019; // read rights
+        const int KEY_READ = 0x20019;
         nint hKey;
-    int rc = RegOpenKeyEx(HKEY_CURRENT_USER, subKey, 0, KEY_READ, out hKey);
+        int rc = RegOpenKeyEx(HKEY_CURRENT_USER, subKey, 0, KEY_READ, out hKey);
         if (rc != 0) return false;
         try
         {
@@ -535,8 +605,7 @@ internal static partial class Program
             var sb = new System.Text.StringBuilder((int)size / 2);
             int rc2 = RegQueryValueEx(hKey, "Teine64", null, out type, sb, ref size);
             if (rc2 != 0 || type != 1) return false;
-            string val = sb.ToString();
-            return !string.IsNullOrWhiteSpace(val);
+            return !string.IsNullOrWhiteSpace(sb.ToString());
         }
         finally { RegCloseKey(hKey); }
     }
@@ -560,6 +629,7 @@ internal static partial class Program
                 var t = line.Trim();
                 if (t.StartsWith("active=", StringComparison.OrdinalIgnoreCase)) _active = t.EndsWith("1");
                 else if (t.StartsWith("autostart=", StringComparison.OrdinalIgnoreCase)) _autostart = t.EndsWith("1");
+                else if (t.StartsWith("simkey=", StringComparison.OrdinalIgnoreCase)) _simulateKeypressMode = t.EndsWith("1");
             }
         }
         catch { _active = true; }
@@ -570,7 +640,7 @@ internal static partial class Program
         try
         {
             Directory.CreateDirectory(ConfigDir);
-            File.WriteAllText(ConfigPath, $"active={( _active ? 1 : 0)}\nautostart={(_autostart ? 1 : 0)}\n");
+            File.WriteAllText(ConfigPath, $"active={( _active ? 1 : 0)}\nautostart={(_autostart ? 1 : 0)}\nsimkey={(_simulateKeypressMode ? 1 : 0)}\n");
         }
         catch { }
     }

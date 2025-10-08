@@ -49,7 +49,6 @@ Requires the .NET 8 SDK. (NativeAOT also needs the Visual C++ build tools on Win
 ```powershell
 dotnet build .\src\Teine64\Teine64.csproj -c Release
 ```
-
 ## Run (debug)
 ```powershell
 dotnet run --project .\src\Teine64\Teine64.csproj -- --paused
@@ -65,10 +64,12 @@ dotnet publish .\src\Teine64\Teine64.csproj -c Release -r win-x64
 Result: `src/Teine64/bin/Release/net8.0/win-x64/publish/Teine64.exe`
 
 ### Alternate: framework-dependent ultra-small single file (~160 KB)
+Optional alternative mode (menu: "Simulate Shift+F15") sends a harmless key combination (Shift+F15) every ~59 seconds which some environments prefer when power policies ignore `SetThreadExecutionState`.
 ```powershell
 dotnet publish .\src\Teine64\Teine64.csproj -c Release -r win-x64 --self-contained false -p:PublishAot=false -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=false -p:StripSymbols=true
 ```
 
+* Tooltip shows "SimKey Mode" when key simulation mode is active
 ### Alternate: self-contained managed single file (non-AOT)
 ```powershell
 dotnet publish .\src\Teine64\Teine64.csproj -c Release -r win-x64 --self-contained true -p:PublishAot=false -p:PublishSingleFile=true -p:PublishTrimmed=true
