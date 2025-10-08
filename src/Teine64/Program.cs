@@ -640,7 +640,8 @@ internal static partial class Program
         try
         {
             Directory.CreateDirectory(ConfigDir);
-            File.WriteAllText(ConfigPath, $"active={( _active ? 1 : 0)}\nautostart={(_autostart ? 1 : 0)}\nsimkey={(_simulateKeypressMode ? 1 : 0)}\n");
+            // Always persist active=1 so default startup state is Running unless overridden by --paused
+            File.WriteAllText(ConfigPath, $"active=1\nautostart={(_autostart ? 1 : 0)}\nsimkey={(_simulateKeypressMode ? 1 : 0)}\n");
         }
         catch { }
     }
