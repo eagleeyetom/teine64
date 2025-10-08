@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.3.0 (2025-10-08)
+### Added
+- Optional SimKey mode: periodically sends Shift+F15 (~59s) as alternative keep-awake strategy.
+
+### Changed
+- Config persistence now always writes `active=1` so default startup is Running unless `--paused` is supplied.
+
+### Fixed
+- Cleaned and restored autostart logic after integration refactor.
+
+### Notes
+- SimKey state persisted via `simkey=1/0` in `%APPDATA%/Teine64/config.ini`.
+
+
 ## v0.2.0 (2025-10-03)
 NativeAOT becomes the default build.
 
